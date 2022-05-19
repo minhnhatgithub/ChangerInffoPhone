@@ -1,0 +1,106 @@
+        public static bool OnOffModule(string deviceID, bool enable, bool viewapp)
+        {
+            try
+            {
+                if (viewapp)
+                {
+                    CloseApp(deviceID, "org.meowcat.edxposed.manager");
+                }
+                Thread.Sleep(500);
+                if (enable)
+                {
+                    EnableModules(deviceID);
+                }
+                else
+                {
+                    EnableModules1(deviceID);
+                }
+                Thread.Sleep(500);
+                if (viewapp)
+                {
+                    OpenPackage(deviceID, "org.meowcat.edxposed.manager");
+                }
+                Thread.Sleep(500);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        public static void EnableModules(string SerialNo)
+        {
+            string contents = "<?xml version='1.0' encoding='utf-8' standalone='yes' ?><map><int name=\"com.ntc.just4fone\" value=\"1\" /></map>";
+            if (!File.Exists(Application.StartupPath + "\\enabled_modules.xml"))
+            {
+                File.WriteAllText(Application.StartupPath + "\\enabled_modules.xml", contents);
+            }
+            string text = ExecuteCMD(SerialNo, " push \"" + Application.StartupPath.ToString() + "\\enabled_modules.xml\" \"/data/data/org.meowcat.edxposed.manager/shared_prefs/enabled_modules.xml\"");
+            if (text.Contains("file pushed"))
+            {
+            }
+        }
+        public static string ExecuteCMD(string index, string cmd)
+        {
+            string result = "";
+            try
+            {
+                string startupPath = Application.StartupPath;
+                string text = "";
+                try
+                {
+                    Process process = new Process();
+                    cmd = string.Concat(new string[]
+                    {
+                        " -s ",
+                        index,
+                        " ",
+                        cmd
+                    });
+                    process.StartInfo = new ProcessStartInfo
+                    {
+                        FileName = startupPath + "\\adb.exe",
+                        Arguments = cmd,
+                        UseShellExecute = false,
+                        WindowStyle = ProcessWindowStyle.Hidden,
+                        CreateNoWindow = true,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true
+                    };
+                    process.Start();
+                    StreamReader standardOutput = process.StandardOutput;
+                    text = standardOutput.ReadToEnd();
+                    process.WaitForExit();
+                }
+                catch (Exception)
+                {
+                }
+                result = text;
+            }
+            catch (Exception)
+            {
+            }
+            return result;
+        }
+        public static bool ChangerInfoPhone(string deviceID, bool viewapp)
+        {
+            try
+            {
+                OnOffModule(deviceID, true, viewapp);
+                MinhNhatHelper.ProduceTxtAddNew(deviceID, Guid.NewGuid().ToString());
+                MinhNhatHelper.StartPushFileChangerInfo(deviceID);
+                Thread.Sleep(1000);
+                MinhNhatHelper.StartServiceFake(deviceID);
+                Thread.Sleep(5000);
+                MinhNhatHelper.DeleteForderSaveFile(deviceID);
+                MinhNhatHelper.StopServiceFake(deviceID);
+                Thread.Sleep(1000);
+                OnOffModule(deviceID, false, viewapp);
+                OnOffModule(deviceID, true, viewapp);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
